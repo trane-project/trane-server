@@ -1,13 +1,14 @@
 pub mod config;
+pub mod error;
 pub mod routes;
-pub mod state;
+pub mod server;
 
 use actix_web::{web, App, HttpServer};
 use config::ServerConfig;
-use state::ServerState;
+use server::Server;
 
 pub async fn new_trane_server(config: ServerConfig) -> std::io::Result<()> {
-    let server_state = web::Data::new(ServerState {
+    let server_state = web::Data::new(Server {
         config: config.clone(),
         opened_libraries: Default::default(),
     });
