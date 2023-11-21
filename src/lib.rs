@@ -10,7 +10,7 @@ use server::Server;
 pub async fn new_trane_server(config: ServerConfig) -> std::io::Result<()> {
     let server_state = web::Data::new(Server {
         config: config.clone(),
-        opened_libraries: Default::default(),
+        remote_instances: Default::default(),
     });
 
     HttpServer::new(move || {
