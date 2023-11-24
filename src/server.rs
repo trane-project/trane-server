@@ -1,33 +1,41 @@
 use parking_lot::Mutex;
 use std::{collections::HashMap, path::Path, sync::Arc};
-use trane::Trane;
+use trane::{
+    data::{filter::ExerciseFilter, ExerciseManifest},
+    scheduler::ExerciseScheduler,
+    Trane,
+};
 
 use crate::{config::ServerConfig, error::ServerError};
 
-#[derive(Clone)]
 /// A remote Trane instance.
+#[derive(Clone)]
 pub struct RemoteTrane {
     // The ID of the library.
     pub library_id: String,
 
     /// The Trane instance.
     pub trane: Arc<Mutex<Trane>>,
+
+    /// The filter to apply when scheduling exercises.
+    pub filter: Option<ExerciseFilter>,
 }
 
 impl RemoteTrane {
     /// Creates a new remote Trane instance.
     pub fn new(library_id: &str, library_path: &Path) -> Result<Self, ServerError> {
-        let instance = Arc::new(Mutex::new(
-            Trane::new(library_path, library_path).map_err(|err| {
+        let instance = Arc::new(Mutex::new(Trane::new(library_path, library_path).map_err(
+            |err| {
                 ServerError::InternalError(format!(
                     "cannot open library with ID {}: {}",
                     library_id, err
                 ))
-            })?,
-        ));
+            },
+        )?));
         Ok(Self {
             library_id: library_id.to_string(),
             trane: instance,
+            filter: None,
         })
     }
 }
@@ -90,5 +98,33 @@ impl Server {
             .get(library_id)
             .unwrap()
             .clone())
+    }
+
+    /// Applies the filter to the library with the given ID.
+    pub fn apply_filter(
+        &self,
+        library_id: &str,
+        filter: ExerciseFilter,
+    ) -> Result<(), ServerError> {
+        let mut instance = self.get_library(library_id)?;
+        instance.filter = Some(filter);
+        Ok(())
+    }
+
+    /// Gets a new batch of exercises from the library with the given ID.
+    pub fn get_exercise_batch(
+        &self,
+        library_id: &str,
+    ) -> Result<Vec<ExerciseManifest>, ServerError> {
+        let instance = self.get_library(library_id)?;
+        let trane = instance.trane.lock();
+        let filter = instance.filter.clone();
+        let batch = trane.get_exercise_batch(filter).map_err(|err| {
+            ServerError::InternalError(format!(
+                "cannot get exercise batch from library with ID {}: {}",
+                library_id, err
+            ))
+        })?;
+        Ok(batch)
     }
 }
