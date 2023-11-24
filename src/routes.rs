@@ -1,7 +1,7 @@
 use crate::server::Server;
-use actix_web::{get, post, web, HttpResponse, Responder, Result};
+use actix_web::{get, web, HttpResponse, Responder, Result};
 
-#[get("/open/{library_id}")]
+#[get("/library/{library_id}/open")]
 async fn open_library(
     data: web::Data<Server>,
     library_id: web::Path<String>,
@@ -10,7 +10,7 @@ async fn open_library(
     Ok(HttpResponse::Ok().body(""))
 }
 
-#[get("/close/{library_id}")]
+#[get("/library/{library_id}/close")]
 async fn close_library(
     data: web::Data<Server>,
     library_id: web::Path<String>,
@@ -19,7 +19,7 @@ async fn close_library(
     Ok(HttpResponse::Ok().body(""))
 }
 
-#[post("/healthz")]
+#[get("/healthz")]
 async fn healthz() -> impl Responder {
     HttpResponse::Ok()
 }

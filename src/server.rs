@@ -18,7 +18,7 @@ impl RemoteTrane {
     /// Creates a new remote Trane instance.
     pub fn new(library_id: &str, library_path: &Path) -> Result<Self, ServerError> {
         let instance = Arc::new(Mutex::new(
-            Trane::new(&library_path, &library_path).map_err(|err| {
+            Trane::new(library_path, library_path).map_err(|err| {
                 ServerError::InternalError(format!(
                     "cannot open library with ID {}: {}",
                     library_id, err
