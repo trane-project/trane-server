@@ -1,10 +1,11 @@
 use parking_lot::Mutex;
 use std::{collections::HashMap, path::Path, sync::Arc};
 use trane::{
-    data::{filter::ExerciseFilter, ExerciseManifest},
+    data::{filter::ExerciseFilter, ExerciseManifest, MasteryScore},
     scheduler::ExerciseScheduler,
     Trane,
 };
+use ustr::Ustr;
 
 use crate::{config::ServerConfig, error::ServerError};
 
@@ -126,5 +127,26 @@ impl Server {
             ))
         })?;
         Ok(batch)
+    }
+
+    /// Scores an exercise from the library with the given ID.
+    pub fn score_exercise(
+        &self,
+        library_id: &str,
+        exercise_id: Ustr,
+        score: MasteryScore,
+        timestamp: i64,
+    ) -> Result<(), ServerError> {
+        let instance = self.get_library(library_id)?;
+        let trane = instance.trane.lock();
+        trane
+            .score_exercise(exercise_id, score, timestamp)
+            .map_err(|err| {
+                ServerError::InternalError(format!(
+                    "cannot score exercise with ID {} from library with ID {}: {}",
+                    exercise_id, library_id, err
+                ))
+            })?;
+        Ok(())
     }
 }
